@@ -1,30 +1,43 @@
-// require("./lib.js")
-// console.log("hello Node.js")
+const express = require("express")
+const app = express()
+const bodyParser = require("body-parser")
 
-// const fs = require("fs")
-// fs.writeFile("./test", "Hello Writing File", function (err) {
-//   if (err) {
-//     console.log("寫入失敗")
-//   } else {
-//     console.log("寫入成功")
-//   }
-// })
-
-// //載入express模組
-// const express = require("express")
-// //建立application物件
-// const app = express()
+app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }))
+app.use(express.json({ limit: "50mb" }))
+app.use(express.static("public"))
 
 // app.set("view engine", "ejs")
 // app.set("views", "./views")
 
-// app.use(express.static("public"))
+app.get("/", function (req, res) {
+  res.sendFile(__dirname + "/index.html", function (err) {
+    if (err) res.send(404)
+  })
+})
 
-// app.get("/", function (req, res) {
-//   res.send("Hello HomePage")
-// })
+app.post("/uploadData", async (req, res) => {
+  let msgDaga = await commentController.uploadData(req.body)
+  if (msgDaga.status == 200) {
+    let imgUrl = await msgDaga.data
+    console.log(imgUrl)
+    res.status(200).json({ ok: true, data: imgUrl })
+  } else {
+    let data = await msgDaga.data
+    res.status(500).json({ ok: false, data: data })
+  }
+})
 
-// //啟動伺服器再測試網址
-// app.listen(3000, function () {
-//   console.log("server started")
-// })
+app.get("/showSubmittedMsg", async (req, res) => {
+  let msgDaga = await commentController.showSubmittedMsg()
+  if (msgDaga.status == 200) {
+    let data = await msgDaga.data
+    res.status(200).json({ ok: true, data: data })
+  } else {
+    let data = await msgDaga.data
+    res.status(500).json({ ok: false, data: data })
+  }
+})
+
+app.listen(3000, function () {
+  console.log("server started")
+})

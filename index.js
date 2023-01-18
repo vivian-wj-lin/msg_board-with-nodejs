@@ -1,45 +1,55 @@
 // const { response } = require("express")
-
-const formfile = document.querySelector(".formfile")
-const formtext = document.querySelector(".formtext")
-const previewimg = document.querySelector(".preivew-img")
+const fileInput = document.querySelector(".fileinput")
+const textInput = document.querySelector(".textinput")
+const previewImg = document.querySelector(".preivewed-img")
 const submitBtn = document.querySelector(".submit-btn")
-const submittedtext = document.querySelector(".submitted-text")
-const submittedimg = document.querySelector(".submitted-img")
-let image_url = ""
-let image_type = ""
+const submittedContentsDiv = document.querySelector(".submitted-contents")
+const fileReader = new FileReader()
+
+// let imageUrl = ""
+
+function createSubmittedMsg(textInput, imageUrl) {
+  let submittedTextContainer = document.createElement("div")
+  submittedTextContainer.classList.add("submittedTextDiv")
+  submittedContentsDiv.prepend(submittedTextContainer)
+
+  let submittedText = document.createElement("div")
+  submittedText.textContent = textInput
+  submittedTextContainer.appendChild(submittedText)
+
+  let submittedImg = document.createElement("img")
+  submittedImg.src = imageUrl
+  submittedTextContainer.appendChild(submittedImg)
+
+  let Hr = document.createElement("hr")
+  submittedTextContainer.appendChild(Hr)
+}
 
 //img preview
-formfile.addEventListener("change", (e) => {
+fileInput.addEventListener("change", (e) => {
   const image = e.target.files[0]
   console.log(image)
-  const reader = new FileReader()
-  reader.addEventListener("load", () => {
-    image_url = reader.result
-    console.log(image_url) //base64
-    previewimg.src = `${image_url}`
+
+  fileReader.addEventListener("load", () => {
+    imageUrl = reader.result
+    console.log(imageUrl) //base64
+    previewImg.src = `${imageUrl}`
   })
   reader.readAsDataURL(image) //readAsDataURL is to read blob or file contents
 })
 
-function showSubmittedMsg(formtext, formfile) {
-  submittedtext.textContent = formtext.value
-  submittedimg.src = `${image_url}`
-}
-
-//output of submitted text and img
+//POST submitted text and img
 submitBtn.addEventListener("click", function () {
   const image = e.target.files[0]
   console.log(image)
-  const reader = new FileReader()
-  reader.addEventListener("load", () => {
-    image_url = reader.result
-    console.log(image_url) //base64
-    fetch(`uploadData`, {
+  fileReader.readAsDataURL(image)
+  fileReader.onload = () => {
+    let imageData = fileReader.result
+    fetch(`/uploadData`, {
       method: "POST",
       body: JSON.stringify({
-        txt: formtext.value,
-        img: image_url,
+        submittedText: textInput.value,
+        submittedImg: imageData,
       }),
       headers: {
         "Content-type": "application/json; charset=UTF-8",
@@ -48,16 +58,16 @@ submitBtn.addEventListener("click", function () {
       .then(function (response) {
         if (response.status != 200) {
           alert("failed to upload")
+          return
         }
         return response.json()
       })
       .then(function (data) {
         console.log(data)
-        let image_url = data.data
-        showSubmittedMsg(formtext, image_url)
+        let imageUrl = data.data
+        createSubmittedMsg(textInput, imageUrl)
       })
-  })
-  reader.readAsDataURL(image)
+  }
 })
 
 function showSubmittedMsg() {
@@ -73,6 +83,12 @@ function showSubmittedMsg() {
     })
     .then(function (data) {
       console.log(data)
+      msgs = data.data
+      msgs.forEach((msg) => {
+        let submittedText = msg.submittedText
+        let imageUrl = msg.submittedImg
+        createComment(submittedText, imageUrl)
+      })
     })
 }
 showSubmittedMsg()
