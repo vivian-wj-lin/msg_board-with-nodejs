@@ -11,12 +11,12 @@ app.use(express.static("public"))
 
 app.get("/", function (req, res) {
   res.sendFile(__dirname + "/index.html", function (err) {
-    if (err) res.send(404)
+    if (err) res.sendStatus(status)
   })
 })
 
 app.post("/uploadData", async (req, res) => {
-  let msgDaga = await commentController.uploadData(req.body)
+  let msgDaga = await msgController.uploadData(req.body)
   if (msgDaga.status == 200) {
     let imgUrl = await msgDaga.data
     console.log(imgUrl)
@@ -28,7 +28,7 @@ app.post("/uploadData", async (req, res) => {
 })
 
 app.get("/showSubmittedMsg", async (req, res) => {
-  let msgDaga = await commentController.showSubmittedMsg()
+  let msgDaga = await msgController.showSubmittedMsg()
   if (msgDaga.status == 200) {
     let data = await msgDaga.data
     res.status(200).json({ ok: true, data: data })
