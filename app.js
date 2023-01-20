@@ -1,41 +1,87 @@
+require("dotenv").config()
+
 const express = require("express")
 const app = express()
+const cors = require("cors")
+const S3 = require("aws-sdk/clients/s3")
+const AWS = require("aws-sdk")
+
+const { renderFile } = require("ejs")
+app.engine("html", require("ejs").renderFile)
+
 const bodyParser = require("body-parser")
-
-app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }))
-app.use(express.json({ limit: "50mb" }))
+// app.use(bodyParser.urlencoded({ extended: true }))
+app.use(bodyParser.json({ limit: "200mb" }))
+// app.use(express.json())
 app.use(express.static("public"))
+app.use(cors())
 
-// app.set("view engine", "ejs")
-// app.set("views", "./views")
+app.get("/", (req, res) => {
+  res.render("index.html")
+})
 
-app.get("/", function (req, res) {
-  res.sendFile(__dirname + "/index.html", function (err) {
-    if (err) res.sendStatus(status)
+const mysql = require("mysql")
+const pool = mysql.createPool({
+  host: process.env.AWS_Myslq_Host,
+  user: "admin",
+  password: process.env.AWS_Myslq_Password,
+  database: "msg_board",
+  port: 3306,
+})
+
+app.post("/upload", (req, res) => {
+  const result = req.body
+  const msgResult = result.textinput
+  const imgResult = result.imagedata
+  // console.log(result)
+  // console.log(msgResult)
+  // console.log(imgResult)
+  let time = new Date().getTime()
+  let imageBuffer = new Buffer.from(
+    imgResult.replace(/^data:image\/\w+;base64,/, ""),
+    "base64"
+  )
+  console.log(imageBuffer)
+  const params = {
+    Bucket: "msg-board-s3-bucket",
+    Key: `msgboard/${time}`,
+    Body: imageBuffer,
+    ContentEncoding: "base64",
+    ContentType: "image/png",
+    // ContentType: "mime/type",
+  }
+  // const s3 = new S3({ region, accessKeyId, secretAccessKey })
+
+  const region = process.env.AWS_region
+  const Bucket = process.env.AWS_BUCKET_NAME
+  const accessKeyId = process.env.AWS_ACCESS_KEY
+  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
+
+  AWS.config.update({
+    Bucket: Bucket,
+    accessKeyId: accessKeyId,
+    secretAccessKey: secretAccessKey,
+    region: region,
+  })
+
+  const s3 = new S3()
+  s3.upload(params, (err, data) => {
+    if (err) {
+      console.log(err)
+      res.status(500).json({ result: "error" })
+    } else {
+      console.log("uploaded to s3")
+      RDSUrl = "https://dk0tbawkd0lmu.cloudfront.net" + `msgboard/${time}`
+      uploadtoRDS(RDSUrl, msgResult)
+      console.log(RDSUrl)
+      res.status(200).json({ result: "ok" })
+    }
   })
 })
 
-app.post("/uploadData", async (req, res) => {
-  let msgDaga = await msgController.uploadData(req.body)
-  if (msgDaga.status == 200) {
-    let imgUrl = await msgDaga.data
-    console.log(imgUrl)
-    res.status(200).json({ ok: true, data: imgUrl })
-  } else {
-    let data = await msgDaga.data
-    res.status(500).json({ ok: false, data: data })
-  }
-})
-
-app.get("/showSubmittedMsg", async (req, res) => {
-  let msgDaga = await msgController.showSubmittedMsg()
-  if (msgDaga.status == 200) {
-    let data = await msgDaga.data
-    res.status(200).json({ ok: true, data: data })
-  } else {
-    let data = await msgDaga.data
-    res.status(500).json({ ok: false, data: data })
-  }
+app.get("/get", (req, res) => {
+  const result = req.body
+  console.log(result)
 })
 
 app.listen(3000, function () {
