@@ -5,6 +5,14 @@ const app = express()
 const cors = require("cors")
 const S3 = require("aws-sdk/clients/s3")
 const AWS = require("aws-sdk")
+const mysql = require("mysql")
+const pool = mysql.createPool({
+  host: process.env.AWS_Myslq_Host,
+  user: "admin",
+  password: process.env.AWS_Myslq_Password,
+  database: "msg_board",
+  port: 3306,
+})
 
 const { renderFile } = require("ejs")
 app.engine("html", require("ejs").renderFile)
@@ -18,15 +26,6 @@ app.use(cors())
 
 app.get("/", (req, res) => {
   res.render("index.html")
-})
-
-const mysql = require("mysql")
-const pool = mysql.createPool({
-  host: process.env.AWS_Myslq_Host,
-  user: "admin",
-  password: process.env.AWS_Myslq_Password,
-  database: "msg_board",
-  port: 3306,
 })
 
 app.post("/upload", (req, res) => {
@@ -71,17 +70,47 @@ app.post("/upload", (req, res) => {
       res.status(500).json({ result: "error" })
     } else {
       console.log("uploaded to s3")
-      RDSUrl = "https://dk0tbawkd0lmu.cloudfront.net" + `msgboard/${time}`
-      uploadtoRDS(RDSUrl, msgResult)
+      RDSUrl = "https://dk0tbawkd0lmu.cloudfront.net" + `/msgboard/${time}`
       console.log(RDSUrl)
+      pool.getConnection(function (err, connection) {
+        let sql = "insert msg(txtContent, imgContent) values(?,?);"
+        connection.query(
+          sql,
+          [msgResult, RDSUrl],
+          function (error, res, fields) {
+            if (error) {
+              console.log(error)
+              reject(error)
+            } else {
+              // resolve(RDSUrl)
+              console.log("uploaded to RDS")
+            }
+          }
+        )
+        connection.release()
+      })
       res.status(200).json({ result: "ok" })
     }
   })
 })
 
 app.get("/get", (req, res) => {
-  const result = req.body
-  console.log(result)
+  // const result = req.body
+  // console.log("this is the route'get'")
+  // console.log(result)
+  pool.getConnection(function (err, connection) {
+    let sql = "select * from msg order by id;"
+
+    connection.query(sql, function (error, result, fields) {
+      if (error) {
+        console.log(error)
+        reject(error)
+      } else {
+        res.status(200).json({ result: "ok" })
+      }
+    })
+    connection.release()
+  })
 })
 
 app.listen(3000, function () {
