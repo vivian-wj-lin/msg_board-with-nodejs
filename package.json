@@ -1,0 +1,35 @@
+{
+  "name": "msg_board-with-nodejs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vivian-wj-lin/msg_board-with-nodejs.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vivian-wj-lin/msg_board-with-nodejs/issues"
+  },
+  "homepage": "https://github.com/vivian-wj-lin/msg_board-with-nodejs#readme",
+  "dependencies": {
+    "aws-sdk": "^2.1298.0",
+    "body-parser": "^1.20.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "ejs": "^3.1.8",
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1",
+    "mysql": "^2.18.1",
+    "mysqlconnector": "^2.0.1",
+    "s3": "^4.4.0"
+  }
+}
