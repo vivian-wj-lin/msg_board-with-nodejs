@@ -40,7 +40,7 @@ app.post("/upload", (req, res) => {
     imgResult.replace(/^data:image\/\w+;base64,/, ""),
     "base64"
   )
-  console.log(imageBuffer)
+  // console.log(imageBuffer)
   const params = {
     Bucket: "msg-board-s3-bucket",
     Key: `msgboard/${time}`,
@@ -71,7 +71,7 @@ app.post("/upload", (req, res) => {
     } else {
       console.log("uploaded to s3")
       RDSUrl = "https://dk0tbawkd0lmu.cloudfront.net" + `/msgboard/${time}`
-      console.log(RDSUrl)
+      // console.log(RDSUrl)
       pool.getConnection(function (err, connection) {
         let sql = "insert msg(txtContent, imgContent) values(?,?);"
         connection.query(
@@ -95,19 +95,15 @@ app.post("/upload", (req, res) => {
 })
 
 app.get("/get", (req, res) => {
-  // const result = req.body
-  // console.log("this is the route'get'")
-  // console.log(result)
   pool.getConnection(function (err, connection) {
     let sql = "select * from msg order by id;"
 
-    connection.query(sql, function (error, result, fields) {
-      if (error) {
-        console.log(error)
-        reject(error)
-      } else {
-        res.status(200).json({ result: "ok" })
+    connection.query(sql, function (err, result) {
+      if (err) {
+        console.log(err.message)
+        return
       }
+      res.send(result)
     })
     connection.release()
   })
